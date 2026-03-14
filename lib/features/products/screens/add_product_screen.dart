@@ -62,34 +62,30 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 validator: (v) => v == null || v.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _category,
-                      decoration: const InputDecoration(labelText: 'Category'),
-                      items: inventoryStore.categories
-                          .map(
-                            (c) => DropdownMenuItem(value: c, child: Text(c)),
-                          )
-                          .toList(),
-                      onChanged: (v) => setState(() => _category = v!),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _uom,
-                      decoration: const InputDecoration(labelText: 'Unit'),
-                      items: ['Pieces', 'Units', 'Kg', 'Reams']
-                          .map(
-                            (u) => DropdownMenuItem(value: u, child: Text(u)),
-                          )
-                          .toList(),
-                      onChanged: (v) => setState(() => _uom = v!),
-                    ),
-                  ),
-                ],
+              DropdownButtonFormField<String>(
+                value: _category,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Category',
+                  prefixIcon: Icon(Iconsax.category),
+                ),
+                items: inventoryStore.categories
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                    .toList(),
+                onChanged: (v) => setState(() => _category = v!),
+              ),
+              const SizedBox(height: 14),
+              DropdownButtonFormField<String>(
+                value: _uom,
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  labelText: 'Unit of Measure',
+                  prefixIcon: Icon(Iconsax.ruler),
+                ),
+                items: ['Pieces', 'Units', 'Kg', 'Reams']
+                    .map((u) => DropdownMenuItem(value: u, child: Text(u)))
+                    .toList(),
+                onChanged: (v) => setState(() => _uom = v!),
               ),
               const SizedBox(height: 28),
               _sectionTitle('Stock Setup'),
