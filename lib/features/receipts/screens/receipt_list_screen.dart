@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
-import '../../../../models.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../models.dart';
+import '../../../main.dart';
+import '../../../core/theme/app_colors.dart';
 import 'new_receipt_screen.dart';
 
 class ReceiptListScreen extends StatefulWidget {
@@ -12,73 +14,85 @@ class ReceiptListScreen extends StatefulWidget {
 }
 
 class _ReceiptListScreenState extends State<ReceiptListScreen> {
-  final List<StockOperation> _receipts = DummyData.operations
-      .where((op) => op.type == OperationType.receipt)
-      .toList();
+  @override
+  void initState() {
+    super.initState();
+    inventoryStore.addListener(_refresh);
+  }
+
+  @override
+  void dispose() {
+    inventoryStore.removeListener(_refresh);
+    super.dispose();
+  }
+
+  void _refresh() => setState(() {});
 
   @override
   Widget build(BuildContext context) {
+    final receipts = inventoryStore.getOperationsByType(OperationType.receipt);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Receipts'),
-        actions: [
-          IconButton(icon: const Icon(Iconsax.search_normal), onPressed: () {}),
-          IconButton(icon: const Icon(Iconsax.filter), onPressed: () {}),
-        ],
-      ),
-      body: _receipts.isEmpty
-          ? _buildEmptyState()
+      appBar: AppBar(title: const Text('Receipts')),
+      body: receipts.isEmpty
+          ? _emptyState()
           : ListView.separated(
               padding: const EdgeInsets.all(16),
-              itemCount: _receipts.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final receipt = _receipts[index];
-                return _buildOperationCard(context, receipt);
-              },
+              itemCount: receipts.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (_, i) => _opCard(receipts[i]),
             ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const NewReceiptScreen()),
-          );
-        },
-        backgroundColor: AppColors.primary,
-        icon: const Icon(Iconsax.add, color: Colors.white),
-        label: const Text('New Receipt', style: TextStyle(color: Colors.white)),
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const NewReceiptScreen()),
+        ),
+        icon: const Icon(Iconsax.add),
+        label: const Text('New Receipt'),
       ),
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _emptyState() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Iconsax.document_download,
-            size: 64,
-            color: AppColors.textSecondary.withOpacity(0.5),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppColors.successLight,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Iconsax.document_download,
+              size: 48,
+              color: AppColors.success,
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Text(
-            'No receipts found',
-            style: Theme.of(context).textTheme.titleLarge,
+            'No receipts yet',
+            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
           ),
-          const SizedBox(height: 8),
-          const Text('Create a new receipt to record incoming goods.'),
         ],
       ),
     );
   }
 
-  Widget _buildOperationCard(BuildContext context, StockOperation op) {
+  Widget _opCard(StockOperation op) {
+    final productNames = op.products.entries
+        .map((e) {
+          final p = inventoryStore.getProduct(e.key);
+          return '${p?.name ?? e.key} × ${e.value}';
+        })
+        .join(', ');
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
       child: Column(
@@ -89,98 +103,64 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
             children: [
               Text(
                 op.reference,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
               ),
-              _buildStatusBadge(op.status),
+              _statusBadge(op.status),
             ],
           ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(
-                Iconsax.user,
-                size: 16,
-                color: AppColors.textSecondary,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                op.partner ?? 'Unknown Supplier',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              const Icon(
-                Iconsax.calendar,
-                size: 16,
-                color: AppColors.textSecondary,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                "${op.scheduledDate.day}/${op.scheduledDate.month}/${op.scheduledDate.year}",
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ],
-          ),
-          const Divider(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "${op.products.length} Products",
-                style: const TextStyle(fontWeight: FontWeight.w500),
-              ),
-              const Icon(Iconsax.arrow_right_3, size: 16),
-            ],
+          const SizedBox(height: 10),
+          _infoRow(Iconsax.user, op.partner ?? 'Unknown'),
+          const SizedBox(height: 6),
+          _infoRow(Iconsax.building, '→ ${op.destinationLocation ?? "N/A"}'),
+          const SizedBox(height: 6),
+          _infoRow(Iconsax.box, productNames),
+          const SizedBox(height: 6),
+          _infoRow(
+            Iconsax.calendar,
+            '${op.scheduledDate.day}/${op.scheduledDate.month}/${op.scheduledDate.year}',
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatusBadge(OperationStatus status) {
-    Color bgColor;
-    Color textColor;
-    String label;
+  Widget _infoRow(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: AppColors.textSecondary),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            text,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-    switch (status) {
-      case OperationStatus.done:
-        bgColor = AppColors.success.withOpacity(0.1);
-        textColor = AppColors.success;
-        label = 'Done';
-        break;
-      case OperationStatus.waiting:
-        bgColor = AppColors.warning.withOpacity(0.1);
-        textColor = AppColors.warning;
-        label = 'Waiting';
-        break;
-      case OperationStatus.ready:
-        bgColor = AppColors.primary.withOpacity(0.1);
-        textColor = AppColors.primary;
-        label = 'Ready';
-        break;
-      default:
-        bgColor = AppColors.textSecondary.withOpacity(0.1);
-        textColor = AppColors.textSecondary;
-        label = status.name.toUpperCase();
-    }
-
+  Widget _statusBadge(OperationStatus status) {
+    final color = status == OperationStatus.done
+        ? AppColors.success
+        : AppColors.warning;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(4),
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        label,
-        style: TextStyle(
-          color: textColor,
+        status.name.toUpperCase(),
+        style: GoogleFonts.inter(
           fontSize: 10,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w700,
+          color: color,
         ),
       ),
     );

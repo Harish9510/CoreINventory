@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
-import '../../../../models.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../models.dart';
+import '../../../main.dart';
+import '../../../core/theme/app_colors.dart';
 import 'add_product_screen.dart';
 import 'product_detail_screen.dart';
 
@@ -13,144 +15,192 @@ class ProductListScreen extends StatefulWidget {
 }
 
 class _ProductListScreenState extends State<ProductListScreen> {
-  final List<Product> _products = DummyData.products;
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    inventoryStore.addListener(_refresh);
+  }
+
+  @override
+  void dispose() {
+    inventoryStore.removeListener(_refresh);
+    super.dispose();
+  }
+
+  void _refresh() => setState(() {});
 
   @override
   Widget build(BuildContext context) {
+    final filtered = inventoryStore.products
+        .where(
+          (p) =>
+              p.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+              p.sku.toLowerCase().contains(_searchQuery.toLowerCase()),
+        )
+        .toList();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Products'),
-        actions: [
-          IconButton(icon: const Icon(Iconsax.search_normal), onPressed: () {}),
-          IconButton(icon: const Icon(Iconsax.filter), onPressed: () {}),
-        ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(60),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: TextField(
+              onChanged: (v) => setState(() => _searchQuery = v),
+              decoration: InputDecoration(
+                hintText: 'Search products...',
+                prefixIcon: const Icon(Iconsax.search_normal, size: 20),
+                filled: true,
+                fillColor: AppColors.background,
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
-      body: _products.isEmpty
+      body: filtered.isEmpty
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Iconsax.box,
-                    size: 64,
-                    color: AppColors.textSecondary.withOpacity(0.5),
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppColors.primarySurface,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Iconsax.box,
+                      size: 48,
+                      color: AppColors.primary,
+                    ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   Text(
                     'No products found',
-                    style: Theme.of(context).textTheme.titleLarge,
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Add a new product to get started.',
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    'Tap + to add your first product',
+                    style: GoogleFonts.inter(color: AppColors.textSecondary),
                   ),
                 ],
               ),
             )
           : ListView.separated(
               padding: const EdgeInsets.all(16),
-              itemCount: _products.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final product = _products[index];
-                return _buildProductCard(context, product);
-              },
+              itemCount: filtered.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) =>
+                  _buildProductCard(filtered[index]),
             ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          await Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const AddProductScreen()),
+            MaterialPageRoute(builder: (_) => const AddProductScreen()),
           );
         },
-        backgroundColor: AppColors.primary,
-        icon: const Icon(Iconsax.add, color: Colors.white),
-        label: const Text('Add Product', style: TextStyle(color: Colors.white)),
+        icon: const Icon(Iconsax.add),
+        label: const Text('Add Product'),
       ),
     );
   }
 
-  Widget _buildProductCard(BuildContext context, Product product) {
-    final bool isLowStock = product.totalStock <= product.reorderPoint;
-    final bool isOutOfStock = product.totalStock == 0;
+  Widget _buildProductCard(Product product) {
+    final isLow =
+        product.totalStock > 0 && product.totalStock <= product.reorderPoint;
+    final isOut = product.totalStock == 0;
+    final statusColor = isOut
+        ? AppColors.error
+        : isLow
+        ? AppColors.warning
+        : AppColors.success;
+    final statusLabel = isOut
+        ? 'Out of Stock'
+        : isLow
+        ? 'Low Stock'
+        : 'In Stock';
+    final statusBg = isOut
+        ? AppColors.errorLight
+        : isLow
+        ? AppColors.warningLight
+        : AppColors.successLight;
 
-    return InkWell(
-      onTap: () {
-        Navigator.push(
+    return GestureDetector(
+      onTap: () async {
+        await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ProductDetailScreen(product: product),
+            builder: (_) => ProductDetailScreen(product: product),
           ),
         );
+        setState(() {});
       },
-      borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.border),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 4,
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 56,
-              height: 56,
+              width: 52,
+              height: 52,
               decoration: BoxDecoration(
-                color: AppColors.primaryLight.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(8),
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: const Center(
-                child: Icon(Iconsax.box, color: AppColors.primary),
+              child: Center(
+                child: Text(
+                  product.name[0],
+                  style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 20,
+                  ),
+                ),
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     product.name,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleLarge?.copyWith(fontSize: 16),
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'SKU: ${product.sku}',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(fontSize: 12),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.background,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          product.category,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.bodyMedium?.copyWith(fontSize: 12),
-                        ),
-                      ),
-                    ],
+                    'SKU: ${product.sku}  •  ${product.category}',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -159,42 +209,32 @@ class _ProductListScreenState extends State<ProductListScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  '${product.totalStock} ${product.unitOfMeasure}',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontSize: 16,
-                    color: isOutOfStock
-                        ? AppColors.error
-                        : AppColors.textPrimary,
+                  '${product.totalStock}',
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 20,
+                    color: statusColor,
                   ),
                 ),
                 const SizedBox(height: 4),
-                if (isOutOfStock)
-                  Text(
-                    'Out of Stock',
-                    style: TextStyle(
-                      color: AppColors.error,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  )
-                else if (isLowStock)
-                  Text(
-                    'Low Stock',
-                    style: TextStyle(
-                      color: AppColors.warning,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  )
-                else
-                  Text(
-                    'In Stock',
-                    style: TextStyle(
-                      color: AppColors.success,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusBg,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    statusLabel,
+                    style: GoogleFonts.inter(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: statusColor,
                     ),
                   ),
+                ),
               ],
             ),
           ],
