@@ -167,9 +167,11 @@ class DeliveryListScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _infoRow(
-                Iconsax.calendar,
-                '${op.scheduledDate.day}/${op.scheduledDate.month}/${op.scheduledDate.year}',
+              Expanded(
+                child: _infoRow(
+                  Iconsax.calendar,
+                  '${op.scheduledDate.day}/${op.scheduledDate.month}/${op.scheduledDate.year}',
+                ),
               ),
               const Icon(
                 Icons.chevron_right_rounded,
