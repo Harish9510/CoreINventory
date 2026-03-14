@@ -141,64 +141,50 @@ class AuthProvider with ChangeNotifier {
     required String businessName,
   }) async {
     _setLoading();
-    try {
-      // 1. Sign up user
-      final AuthResponse res = await _supabase.auth.signUp(
-        email: email,
-        password: password,
-        data: {'name': name},
-      );
+    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
 
-      final user = res.user;
-      if (user == null) throw Exception('User creation failed');
+    // Mock user for UI testing
+    _userModel = UserModel(
+      id: 'mock-id',
+      name: name,
+      email: email,
+      role: 'owner',
+      status: 'active',
+      subscriptionPlan: 'free',
+      createdAt: DateTime.now(),
+      lastLogin: DateTime.now(),
+      organizationId: null,
+    );
+    _status = AuthStatus.authenticated;
 
-      // 2. Create organization
-      final orgData = await _supabase
-          .from('organizations')
-          .insert({'name': businessName, 'owner_uid': user.id})
-          .select()
-          .single();
-
-      // 3. Create user record
-      await _supabase.from('users').insert({
-        'id': user.id,
-        'name': name,
-        'email': email,
-        'role': 'owner',
-        'status': 'active',
-        'subscription_plan': 'free',
-        'organization_id': orgData['id'],
-      });
-
-      await _supabase.auth.signOut();
-      _clearError();
-      return true;
-    } on AuthException catch (e) {
-      _setError(e.message);
-      return false;
-    } catch (e) {
-      _setError('An unexpected error occurred during signup.');
-      return false;
-    } finally {
-      _setNotLoading();
-    }
+    _clearError();
+    _setNotLoading();
+    notifyListeners();
+    return true;
   }
 
   Future<bool> signIn({required String email, required String password}) async {
-    try {
-      _setLoading();
-      await _supabase.auth.signInWithPassword(email: email, password: password);
-      _clearError();
-      return true;
-    } on AuthException catch (e) {
-      _setError(e.message);
-      return false;
-    } catch (e) {
-      _setError('Unexpected error: ${e.toString()}');
-      return false;
-    } finally {
-      _setNotLoading();
-    }
+    _setLoading();
+    await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
+
+    // Mock user for UI testing
+    _userModel = UserModel(
+      id: 'mock-id',
+      name: 'Deepak Test',
+      email: email,
+      role: 'admin',
+      status: 'active',
+      subscriptionPlan: 'pro',
+      createdAt: DateTime.now(),
+      lastLogin: DateTime.now(),
+      organizationId: null,
+    );
+    _status = AuthStatus.authenticated;
+
+    _clearError();
+    _setNotLoading();
+    notifyListeners();
+    return true;
   }
 
   Future<void> signOut() async {

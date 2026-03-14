@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
-import '../routes/app_routes.dart';
 import 'dashboard/dashboard_page.dart';
 import 'products/products_page.dart';
 import 'operations/operations_page.dart';
@@ -14,34 +14,41 @@ class AppShell extends StatefulWidget {
   State<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> {
+class _AppShellState extends State<AppShell>
+    with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
+  late AnimationController _sidebarCtrl;
 
   final List<_NavItem> _navItems = const [
     _NavItem(
-      icon: Icons.dashboard_rounded,
+      icon: Icons.dashboard_outlined,
+      activeIcon: Icons.dashboard_rounded,
       label: 'Dashboard',
-      route: AppRoutes.dashboard,
+      badge: null,
     ),
     _NavItem(
-      icon: Icons.inventory_2_rounded,
+      icon: Icons.inventory_2_outlined,
+      activeIcon: Icons.inventory_2_rounded,
       label: 'Products',
-      route: AppRoutes.products,
+      badge: null,
     ),
     _NavItem(
-      icon: Icons.local_shipping_rounded,
+      icon: Icons.local_shipping_outlined,
+      activeIcon: Icons.local_shipping_rounded,
       label: 'Operations',
-      route: AppRoutes.operations,
+      badge: '3',
     ),
     _NavItem(
-      icon: Icons.settings_rounded,
+      icon: Icons.settings_outlined,
+      activeIcon: Icons.settings_rounded,
       label: 'Settings',
-      route: AppRoutes.settings,
+      badge: null,
     ),
     _NavItem(
-      icon: Icons.person_rounded,
+      icon: Icons.person_outline_rounded,
+      activeIcon: Icons.person_rounded,
       label: 'Profile',
-      route: AppRoutes.profile,
+      badge: null,
     ),
   ];
 
@@ -54,60 +61,52 @@ class _AppShellState extends State<AppShell> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _sidebarCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _sidebarCtrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _sidebarCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final bool isWide = MediaQuery.of(context).size.width > 720;
+    final size = MediaQuery.of(context).size;
+    final isWide = size.width > 720;
 
     return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      body: isWide ? _wideLayout() : _narrowLayout(),
-    );
-  }
-
-  Widget _wideLayout() {
-    return Row(
-      children: [
-        _Sidebar(
-          items: _navItems,
-          selectedIndex: _selectedIndex,
-          onTap: (i) => setState(() => _selectedIndex = i),
-        ),
-        Expanded(child: _pages[_selectedIndex]),
-      ],
-    );
-  }
-
-  Widget _narrowLayout() {
-    return Scaffold(
-      backgroundColor: AppColors.pageBg,
-      appBar: AppBar(
-        title: Text(
-          _navItems[_selectedIndex].label,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 0,
-      ),
-      body: _pages[_selectedIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (i) => setState(() => _selectedIndex = i),
-        backgroundColor: Colors.white,
-        indicatorColor: AppColors.primary.withValues(alpha: 0.15),
-        destinations: _navItems
-            .map(
-              (item) => NavigationDestination(
-                icon: Icon(item.icon, color: AppColors.sidebarText),
-                selectedIcon: Icon(item.icon, color: AppColors.primary),
-                label: item.label,
-              ),
+      backgroundColor: AppColors.background,
+      body: isWide
+          ? Row(
+              children: [
+                _Sidebar(
+                  items: _navItems,
+                  selectedIndex: _selectedIndex,
+                  onTap: (i) => setState(() => _selectedIndex = i),
+                ),
+                Expanded(child: _pages[_selectedIndex]),
+              ],
             )
-            .toList(),
-      ),
+          : _pages[_selectedIndex],
+      bottomNavigationBar: isWide
+          ? null
+          : _BottomNav(
+              items: _navItems,
+              selectedIndex: _selectedIndex,
+              onTap: (i) => setState(() => _selectedIndex = i),
+            ),
     );
   }
 }
 
+// ─── Sidebar ──────────────────────────────────────────────
 class _Sidebar extends StatelessWidget {
   final List<_NavItem> items;
   final int selectedIndex;
@@ -122,22 +121,32 @@ class _Sidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 240,
-      color: AppColors.sidebarBg,
+      width: 248,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(right: BorderSide(color: AppColors.border, width: 1)),
+      ),
       child: Column(
         children: [
-          const SizedBox(height: 40),
-          // Logo / App name
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          // Logo + App name
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 40, 20, 24),
             child: Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(10),
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: const Icon(
                     Icons.inventory_rounded,
@@ -146,75 +155,129 @@ class _Sidebar extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  'CoreInventory',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'CoreInventory',
+                        style: GoogleFonts.inter(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                      Text(
+                        'v1.0.0',
+                        style: GoogleFonts.inter(
+                          color: AppColors.textSecondary,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 24),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
+
+          // Divider
+          const Divider(height: 1, indent: 16, endIndent: 16),
+          const SizedBox(height: 20),
+
+          // Nav label
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'NAVIGATION',
-                style: TextStyle(
-                  color: Color(0xFF6B7FBB),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
+                'MAIN MENU',
+                style: GoogleFonts.inter(
+                  color: AppColors.textLight,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
                   letterSpacing: 1.2,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 8),
-          ...items.asMap().entries.map((entry) {
-            final i = entry.key;
-            final item = entry.value;
-            final isSelected = i == selectedIndex;
-            return _SidebarTile(
-              icon: item.icon,
-              label: item.label,
-              isSelected: isSelected,
-              onTap: () => onTap(i),
-            );
-          }),
+          const SizedBox(height: 10),
+
+          // Nav items
+          ...items.asMap().entries.map(
+            (e) => _SidebarTile(
+              item: e.value,
+              isSelected: e.key == selectedIndex,
+              onTap: () => onTap(e.key),
+            ),
+          ),
+
           const Spacer(),
-          Padding(
+
+          // Bottom promo card
+          Container(
+            margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                const CircleAvatar(
-                  radius: 18,
-                  backgroundColor: AppColors.primary,
-                  child: Icon(Icons.person, color: Colors.white, size: 20),
+            decoration: BoxDecoration(
+              gradient: AppColors.primaryGradient,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
-                const SizedBox(width: 10),
-                const Expanded(
-                  child: Text(
-                    'My Account',
-                    style: TextStyle(
-                      color: AppColors.sidebarText,
-                      fontSize: 13,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.workspace_premium_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Upgrade to Pro',
+                  style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
                   ),
                 ),
-                Icon(
-                  Icons.logout,
-                  color: Colors.redAccent.withValues(alpha: 0.8),
-                  size: 18,
+                const SizedBox(height: 4),
+                Text(
+                  'Unlock unlimited warehouses & team members.',
+                  style: GoogleFonts.inter(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: 11,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Upgrade Now',
+                    style: GoogleFonts.inter(
+                      color: AppColors.primary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -222,14 +285,12 @@ class _Sidebar extends StatelessWidget {
 }
 
 class _SidebarTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
+  final _NavItem item;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _SidebarTile({
-    required this.icon,
-    required this.label,
+    required this.item,
     required this.isSelected,
     required this.onTap,
   });
@@ -238,34 +299,54 @@ class _SidebarTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.sidebarActive.withValues(alpha: 0.3)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-          border: isSelected
-              ? Border(left: BorderSide(color: AppColors.accent, width: 3))
-              : null,
+          color: isSelected ? AppColors.primarySurface : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
-            Icon(
-              icon,
-              color: isSelected ? AppColors.accent : AppColors.sidebarText,
-              size: 20,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? Colors.white : AppColors.sidebarText,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                fontSize: 14,
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                isSelected ? item.activeIcon : item.icon,
+                key: ValueKey(isSelected),
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                size: 20,
               ),
             ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                item.label,
+                style: GoogleFonts.inter(
+                  color: isSelected
+                      ? AppColors.primary
+                      : AppColors.textSecondary,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            if (item.badge != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.error,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  item.badge!,
+                  style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -273,14 +354,105 @@ class _SidebarTile extends StatelessWidget {
   }
 }
 
+// ─── Bottom Nav (mobile) ──────────────────────────────────
+class _BottomNav extends StatelessWidget {
+  final List<_NavItem> items;
+  final int selectedIndex;
+  final void Function(int) onTap;
+
+  const _BottomNav({
+    required this.items,
+    required this.selectedIndex,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 72,
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(top: BorderSide(color: AppColors.border)),
+      ),
+      child: Row(
+        children: items.asMap().entries.map((e) {
+          final i = e.key;
+          final item = e.value;
+          final active = i == selectedIndex;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onTap(i),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                color: Colors.transparent,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        Icon(
+                          active ? item.activeIcon : item.icon,
+                          color: active
+                              ? AppColors.primary
+                              : AppColors.textLight,
+                          size: 22,
+                        ),
+                        if (item.badge != null)
+                          Positioned(
+                            right: -6,
+                            top: -4,
+                            child: Container(
+                              width: 14,
+                              height: 14,
+                              decoration: const BoxDecoration(
+                                color: AppColors.error,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  item.badge!,
+                                  style: GoogleFonts.inter(
+                                    color: Colors.white,
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      item.label,
+                      style: GoogleFonts.inter(
+                        color: active ? AppColors.primary : AppColors.textLight,
+                        fontSize: 10,
+                        fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
 class _NavItem {
   final IconData icon;
+  final IconData activeIcon;
   final String label;
-  final String route;
+  final String? badge;
 
   const _NavItem({
     required this.icon,
+    required this.activeIcon,
     required this.label,
-    required this.route,
+    this.badge,
   });
 }

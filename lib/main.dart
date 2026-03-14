@@ -6,7 +6,7 @@ import 'routes/app_routes.dart';
 import 'pages/auth/login_page.dart';
 import 'pages/auth/signup_page.dart';
 import 'pages/app_shell.dart';
-import 'theme/app_colors.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,18 +33,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'CoreInventory',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
-        useMaterial3: true,
-        fontFamily: 'Inter',
-        inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
-          ),
-        ),
-      ),
+      theme: AppTheme.lightTheme,
       initialRoute: AppRoutes.login,
       routes: {
         AppRoutes.login: (context) => const LoginPage(),
