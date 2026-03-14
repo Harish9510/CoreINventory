@@ -6,6 +6,7 @@ import 'dashboard/dashboard_page.dart';
 import '../features/products/screens/product_list_screen.dart';
 import '../features/receipts/screens/receipt_list_screen.dart';
 import '../features/deliveries/screens/delivery_list_screen.dart';
+import '../features/moves/screens/move_history_screen.dart';
 import 'more/more_page.dart';
 
 class AppShell extends StatefulWidget {
@@ -38,6 +39,11 @@ class _AppShellState extends State<AppShell>
       activeIcon: Iconsax.truck_fast,
       label: 'Deliveries',
     ),
+    _NavItem(
+      icon: Iconsax.arrow_swap_horizontal,
+      activeIcon: Iconsax.arrow_swap_horizontal,
+      label: 'Move Hist.',
+    ),
     _NavItem(icon: Iconsax.more, activeIcon: Iconsax.more, label: 'More'),
   ];
 
@@ -46,6 +52,7 @@ class _AppShellState extends State<AppShell>
     const ProductListScreen(),
     const ReceiptListScreen(),
     const DeliveryListScreen(),
+    const MoveHistoryScreen(),
     const MorePage(),
   ];
 

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../models.dart';
 import '../../../theme/app_colors.dart';
 import 'new_receipt_screen.dart';
+import 'receipt_detail_screen.dart';
 
 class ReceiptListScreen extends StatelessWidget {
   const ReceiptListScreen({super.key});
@@ -118,7 +119,6 @@ class ReceiptListScreen extends StatelessWidget {
         .join(', ');
 
     return Container(
-      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(18),
@@ -131,61 +131,75 @@ class ReceiptListScreen extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ReceiptDetailScreen(operationId: op.id),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Text(
-                  op.reference,
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13,
-                    color: AppColors.textPrimary,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Text(
+                      op.reference,
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                   ),
-                ),
+                  _statusBadge(op.status),
+                ],
               ),
-              _statusBadge(op.status),
+              const SizedBox(height: 18),
+              _infoRow(Iconsax.user, op.partner ?? 'Unknown Partner'),
+              const SizedBox(height: 10),
+              _infoRow(
+                Iconsax.location_add,
+                '${op.destinationLocation ?? "Main Warehouse"}',
+              ),
+              const SizedBox(height: 10),
+              _infoRow(Iconsax.box, productNames),
+              const Divider(height: 32, color: AppColors.border),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: _infoRow(
+                      Iconsax.calendar,
+                      '${op.scheduledDate.day}/${op.scheduledDate.month}/${op.scheduledDate.year}',
+                    ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.textLight,
+                    size: 20,
+                  ),
+                ],
+              ),
             ],
           ),
-          const SizedBox(height: 18),
-          _infoRow(Iconsax.user, op.partner ?? 'Unknown Partner'),
-          const SizedBox(height: 10),
-          _infoRow(
-            Iconsax.location_add,
-            '${op.destinationLocation ?? "Main Warehouse"}',
-          ),
-          const SizedBox(height: 10),
-          _infoRow(Iconsax.box, productNames),
-          const Divider(height: 32, color: AppColors.border),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: _infoRow(
-                  Iconsax.calendar,
-                  '${op.scheduledDate.day}/${op.scheduledDate.month}/${op.scheduledDate.year}',
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: AppColors.textLight,
-                size: 20,
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }

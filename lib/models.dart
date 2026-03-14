@@ -37,6 +37,9 @@ class StockOperation {
   final String? sourceLocation;
   final String? destinationLocation;
   final Map<String, int> products; // productId -> quantity
+  String? responsible;
+  String? deliveryAddress;
+  String? operationSubType; // e.g. 'Pick', 'Pack', 'Ship' for deliveries
 
   StockOperation({
     required this.id,
@@ -48,6 +51,9 @@ class StockOperation {
     this.sourceLocation,
     this.destinationLocation,
     required this.products,
+    this.responsible,
+    this.deliveryAddress,
+    this.operationSubType,
   });
 }
 
@@ -59,6 +65,12 @@ class InventoryStore extends ChangeNotifier {
     'Apex Steel Corp',
     'Global Office Supplies',
     'TechWorld Distributors',
+  ];
+
+  final List<String> customers = [
+    'Acme Corp',
+    'Azure Interior',
+    'BuildPro Ltd',
   ];
 
   final List<String> warehouses = [
@@ -75,6 +87,8 @@ class InventoryStore extends ChangeNotifier {
     'Electronics',
     'Office Supplies',
   ];
+
+  final List<String> operationSubTypes = ['Pick', 'Pack', 'Ship', 'Direct'];
 
   final List<Product> products = [
     Product(
@@ -125,6 +139,7 @@ class InventoryStore extends ChangeNotifier {
       partner: 'Apex Steel Corp',
       destinationLocation: 'Warehouse A',
       products: {'1': 50},
+      responsible: 'Admin',
     ),
     StockOperation(
       id: 'op2',
@@ -135,6 +150,9 @@ class InventoryStore extends ChangeNotifier {
       partner: 'Acme Corp',
       sourceLocation: 'Main Store',
       products: {'2': 10},
+      responsible: 'Admin',
+      deliveryAddress: '123 Business Ave',
+      operationSubType: 'Ship',
     ),
     StockOperation(
       id: 'op3',
@@ -145,6 +163,7 @@ class InventoryStore extends ChangeNotifier {
       sourceLocation: 'Warehouse A',
       destinationLocation: 'Warehouse B',
       products: {'1': 20},
+      responsible: 'Admin',
     ),
   ];
 
@@ -167,66 +186,178 @@ class InventoryStore extends ChangeNotifier {
     }
   }
 
-  // ── Receipts (incoming) ──
+  // ── Status Transitions ──
+
+  /// Validate: Draft → Ready (receipts/transfers), Waiting → Ready (deliveries)
+  bool validateOperation(String opId) {
+    final op = _findOp(opId);
+    if (op == null) return false;
+
+    if (op.type == OperationType.delivery) {
+      if (op.status == OperationStatus.draft ||
+          op.status == OperationStatus.waiting) {
+        op.status = OperationStatus.ready;
+        notifyListeners();
+        return true;
+      }
+    } else {
+      if (op.status == OperationStatus.draft) {
+        op.status = OperationStatus.ready;
+        notifyListeners();
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Mark Done: Ready → Done and apply stock changes
+  bool markDone(String opId) {
+    final op = _findOp(opId);
+    if (op == null || op.status != OperationStatus.ready) return false;
+
+    op.status = OperationStatus.done;
+    _applyStockChanges(op);
+    notifyListeners();
+    return true;
+  }
+
+  /// Cancel any operation (unless already done)
+  bool cancelOperation(String opId) {
+    final op = _findOp(opId);
+    if (op == null || op.status == OperationStatus.done) return false;
+
+    op.status = OperationStatus.canceled;
+    notifyListeners();
+    return true;
+  }
+
+  /// Generic method to update status directly (useful for waiting state)
+  bool updateOperationStatus(String opId, OperationStatus newStatus) {
+    final op = _findOp(opId);
+    if (op == null) return false;
+    op.status = newStatus;
+    notifyListeners();
+    return true;
+  }
+
+  StockOperation? _findOp(String id) {
+    try {
+      return operations.firstWhere((op) => op.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _applyStockChanges(StockOperation op) {
+    switch (op.type) {
+      case OperationType.receipt:
+        for (final entry in op.products.entries) {
+          final product = getProduct(entry.key);
+          if (product != null) {
+            final dest = op.destinationLocation ?? '';
+            product.stockPerLocation[dest] =
+                (product.stockPerLocation[dest] ?? 0) + entry.value;
+          }
+        }
+        break;
+      case OperationType.delivery:
+        for (final entry in op.products.entries) {
+          final product = getProduct(entry.key);
+          if (product != null) {
+            final src = op.sourceLocation ?? '';
+            final current = product.stockPerLocation[src] ?? 0;
+            product.stockPerLocation[src] = (current - entry.value).clamp(
+              0,
+              current,
+            );
+          }
+        }
+        break;
+      case OperationType.transfer:
+        for (final entry in op.products.entries) {
+          final product = getProduct(entry.key);
+          if (product != null) {
+            final src = op.sourceLocation ?? '';
+            final dest = op.destinationLocation ?? '';
+            final current = product.stockPerLocation[src] ?? 0;
+            product.stockPerLocation[src] = (current - entry.value).clamp(
+              0,
+              current,
+            );
+            product.stockPerLocation[dest] =
+                (product.stockPerLocation[dest] ?? 0) + entry.value;
+          }
+        }
+        break;
+      case OperationType.adjustment:
+        // Adjustments are applied immediately
+        break;
+    }
+  }
+
+  /// Check if products in an operation have sufficient stock
+  Map<String, bool> checkStockAvailability(StockOperation op) {
+    final result = <String, bool>{};
+    final location = op.sourceLocation ?? '';
+    for (final entry in op.products.entries) {
+      final product = getProduct(entry.key);
+      if (product != null) {
+        final available = product.stockPerLocation[location] ?? 0;
+        result[entry.key] = available >= entry.value;
+      } else {
+        result[entry.key] = false;
+      }
+    }
+    return result;
+  }
+
+  // ── Receipts (incoming) — now starts as draft ──
   void createReceipt({
     required String supplier,
     required String destination,
     required Map<String, int> items,
+    String? responsible,
   }) {
     _opCounter++;
     final op = StockOperation(
       id: 'op$_opCounter',
       reference: 'WH/IN/${_opCounter.toString().padLeft(4, '0')}',
       type: OperationType.receipt,
-      status: OperationStatus.done,
+      status: OperationStatus.draft,
       scheduledDate: DateTime.now(),
       partner: supplier,
       destinationLocation: destination,
       products: items,
+      responsible: responsible ?? 'Admin',
     );
     operations.insert(0, op);
-
-    // Increase stock
-    for (final entry in items.entries) {
-      final product = getProduct(entry.key);
-      if (product != null) {
-        product.stockPerLocation[destination] =
-            (product.stockPerLocation[destination] ?? 0) + entry.value;
-      }
-    }
     notifyListeners();
   }
 
-  // ── Deliveries (outgoing) ──
+  // ── Deliveries (outgoing) — now starts as draft ──
   void createDelivery({
     required String customer,
     required String source,
     required Map<String, int> items,
+    String? responsible,
+    String? deliveryAddress,
+    String? operationSubType,
   }) {
     _opCounter++;
     final op = StockOperation(
       id: 'op$_opCounter',
       reference: 'WH/OUT/${_opCounter.toString().padLeft(4, '0')}',
       type: OperationType.delivery,
-      status: OperationStatus.done,
+      status: OperationStatus.draft,
       scheduledDate: DateTime.now(),
       partner: customer,
       sourceLocation: source,
       products: items,
+      responsible: responsible ?? 'Admin',
+      deliveryAddress: deliveryAddress,
+      operationSubType: operationSubType,
     );
     operations.insert(0, op);
-
-    // Decrease stock
-    for (final entry in items.entries) {
-      final product = getProduct(entry.key);
-      if (product != null) {
-        final current = product.stockPerLocation[source] ?? 0;
-        product.stockPerLocation[source] = (current - entry.value).clamp(
-          0,
-          current,
-        );
-      }
-    }
     notifyListeners();
   }
 
@@ -235,36 +366,25 @@ class InventoryStore extends ChangeNotifier {
     required String source,
     required String destination,
     required Map<String, int> items,
+    String? responsible,
   }) {
     _opCounter++;
     final op = StockOperation(
       id: 'op$_opCounter',
       reference: 'WH/INT/${_opCounter.toString().padLeft(4, '0')}',
       type: OperationType.transfer,
-      status: OperationStatus.done,
+      status: OperationStatus.draft,
       scheduledDate: DateTime.now(),
       sourceLocation: source,
       destinationLocation: destination,
       products: items,
+      responsible: responsible ?? 'Admin',
     );
     operations.insert(0, op);
-
-    for (final entry in items.entries) {
-      final product = getProduct(entry.key);
-      if (product != null) {
-        final current = product.stockPerLocation[source] ?? 0;
-        product.stockPerLocation[source] = (current - entry.value).clamp(
-          0,
-          current,
-        );
-        product.stockPerLocation[destination] =
-            (product.stockPerLocation[destination] ?? 0) + entry.value;
-      }
-    }
     notifyListeners();
   }
 
-  // ── Adjustments ──
+  // ── Adjustments ── (applied immediately)
   void createAdjustment({
     required String productId,
     required String location,
@@ -287,6 +407,7 @@ class InventoryStore extends ChangeNotifier {
       partner: reason,
       sourceLocation: location,
       products: {productId: diff},
+      responsible: 'Admin',
     );
     operations.insert(0, op);
     product.stockPerLocation[location] = newQuantity;
@@ -295,4 +416,22 @@ class InventoryStore extends ChangeNotifier {
 
   List<StockOperation> getOperationsByType(OperationType type) =>
       operations.where((op) => op.type == type).toList();
+
+  /// Get all move history entries (flattened: one row per product per operation)
+  List<Map<String, dynamic>> getMoveHistory() {
+    final moves = <Map<String, dynamic>>[];
+    for (final op in operations) {
+      for (final entry in op.products.entries) {
+        final product = getProduct(entry.key);
+        moves.add({
+          'operation': op,
+          'productId': entry.key,
+          'productName': product?.name ?? entry.key,
+          'productSku': product?.sku ?? '',
+          'quantity': entry.value,
+        });
+      }
+    }
+    return moves;
+  }
 }
