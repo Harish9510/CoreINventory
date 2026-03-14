@@ -1,333 +1,446 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
 import '../../theme/app_colors.dart';
-import '../auth/login_page.dart';
+import '../../providers/auth_provider.dart';
+import '../../routes/app_routes.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AuthProvider>(
-      builder: (context, auth, _) {
-        final user = auth.userModel;
-        return Scaffold(
-          backgroundColor: AppColors.pageBg,
-          body: CustomScrollView(
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Consumer<AuthProvider>(
+        builder: (context, auth, _) {
+          final user = auth.userModel;
+          final name = user?.name ?? 'Loading...';
+          final email = user?.email ?? 'Loading...';
+          final role = user?.role.toUpperCase() ?? 'USER';
+
+          return CustomScrollView(
             slivers: [
-              // Header
+              // ── Header (Gradient hero)
               SliverToBoxAdapter(
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(24, 48, 24, 32),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [AppColors.primary, AppColors.primaryDark],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                child: Stack(
+                  children: [
+                    // Background
+                    Container(
+                      height: 180,
+                      decoration: const BoxDecoration(
+                        gradient: AppColors.primaryGradient,
+                      ),
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            right: -40,
+                            top: -40,
+                            child: _blob(
+                              200,
+                              Colors.white.withValues(alpha: 0.1),
+                            ),
+                          ),
+                          Positioned(
+                            left: -20,
+                            bottom: -20,
+                            child: _blob(
+                              120,
+                              Colors.white.withValues(alpha: 0.1),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+                    // Content
+                    Padding(
+                      padding: const EdgeInsets.only(top: 100),
+                      child: Column(
+                        children: [
+                          // Avatar
+                          Center(
+                            child: Stack(
+                              alignment: Alignment.bottomRight,
+                              children: [
+                                Container(
+                                  width: 100,
+                                  height: 100,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surface,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: AppColors.background,
+                                      width: 4,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                        blurRadius: 10,
+                                      ),
+                                    ],
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      name.isNotEmpty
+                                          ? name[0].toUpperCase()
+                                          : '?',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 40,
+                                        fontWeight: FontWeight.w800,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.success,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.check_rounded,
+                                    color: Colors.white,
+                                    size: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Name & Role
+                          Text(
+                            name,
+                            style: GoogleFonts.inter(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            email,
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryLight.withValues(
+                                alpha: 0.15,
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              role,
+                              style: GoogleFonts.inter(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
-                      CircleAvatar(
-                        radius: 44,
-                        backgroundColor: Colors.white.withValues(alpha: 0.2),
-                        child: Text(
-                          (user?.name.isNotEmpty == true)
-                              ? user!.name[0].toUpperCase()
-                              : 'U',
-                          style: const TextStyle(
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        user?.name ?? 'User',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        user?.email ?? '',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.75),
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
+                      // Subscription Card
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 6,
-                        ),
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(20),
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.border),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.02),
+                              blurRadius: 10,
+                            ),
+                          ],
                         ),
-                        child: Text(
-                          (user?.role ?? 'user').toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1,
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppColors.warningLight,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.workspace_premium_rounded,
+                                color: AppColors.warning,
+                                size: 28,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Free Plan',
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.textPrimary,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Upgrade to add teammates',
+                                    style: GoogleFonts.inter(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            ElevatedButton(
+                              onPressed: () {},
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.warning,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              child: Text(
+                                'Upgrade',
+                                style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Settings Lists
+                      _buildSectionHeader('Account Settings'),
+                      _buildTile(
+                        Icons.store_rounded,
+                        'Business Details',
+                        'Manage your organization',
+                      ),
+                      _buildTile(
+                        Icons.notifications_rounded,
+                        'Notifications',
+                        'Manage alerts & emails',
+                      ),
+                      _buildTile(
+                        Icons.security_rounded,
+                        'Security',
+                        'Password & 2FA',
+                      ),
+
+                      const SizedBox(height: 24),
+                      _buildSectionHeader('Support & Legal'),
+                      _buildTile(
+                        Icons.help_center_rounded,
+                        'Help Center',
+                        'Guides & FAQ',
+                      ),
+                      _buildTile(
+                        Icons.privacy_tip_rounded,
+                        'Privacy Policy',
+                        'How we handle your data',
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      // Logout
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () => _confirmLogout(context, auth),
+                          icon: const Icon(
+                            Icons.logout_rounded,
+                            color: AppColors.error,
+                          ),
+                          label: Text(
+                            'Log Out',
+                            style: GoogleFonts.inter(
+                              color: AppColors.error,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppColors.errorLight),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
                           ),
                         ),
                       ),
+                      const SizedBox(height: 48),
                     ],
                   ),
                 ),
               ),
-
-              // Info cards
-              SliverPadding(
-                padding: const EdgeInsets.all(20),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    _SectionTitle(title: 'Account Details'),
-                    const SizedBox(height: 12),
-                    _InfoCard(
-                      children: [
-                        _InfoRow(
-                          icon: Icons.person_outline,
-                          label: 'Full Name',
-                          value: user?.name ?? '—',
-                        ),
-                        _InfoRow(
-                          icon: Icons.email_outlined,
-                          label: 'Email',
-                          value: user?.email ?? '—',
-                        ),
-                        _InfoRow(
-                          icon: Icons.badge_outlined,
-                          label: 'Role',
-                          value: user?.role ?? '—',
-                        ),
-                        _InfoRow(
-                          icon: Icons.circle_rounded,
-                          label: 'Status',
-                          value: user?.status ?? '—',
-                          isStatus: true,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    _SectionTitle(title: 'Subscription'),
-                    const SizedBox(height: 12),
-                    _InfoCard(
-                      children: [
-                        _InfoRow(
-                          icon: Icons.star_outline_rounded,
-                          label: 'Plan',
-                          value: user?.subscriptionPlan ?? 'Free',
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    _SectionTitle(title: 'Actions'),
-                    const SizedBox(height: 12),
-                    _ActionTile(
-                      icon: Icons.edit_rounded,
-                      color: AppColors.primary,
-                      label: 'Edit Profile',
-                      onTap: () {},
-                    ),
-                    const SizedBox(height: 8),
-                    _ActionTile(
-                      icon: Icons.lock_outline_rounded,
-                      color: AppColors.warning,
-                      label: 'Change Password',
-                      onTap: () {},
-                    ),
-                    const SizedBox(height: 8),
-                    _ActionTile(
-                      icon: Icons.logout_rounded,
-                      color: AppColors.danger,
-                      label: 'Logout',
-                      onTap: () async {
-                        await auth.signOut();
-                        if (context.mounted) {
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const LoginPage(),
-                            ),
-                            (_) => false,
-                          );
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 32),
-                  ]),
-                ),
-              ),
             ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  final String title;
-  const _SectionTitle({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontWeight: FontWeight.bold,
-        fontSize: 16,
-        color: Color(0xFF334155),
+          );
+        },
       ),
     );
   }
-}
 
-class _InfoCard extends StatelessWidget {
-  final List<Widget> children;
-  const _InfoCard({required this.children});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _blob(double size, Color color) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(children: children),
+      width: size,
+      height: size,
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
     );
   }
-}
 
-class _InfoRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final bool isStatus;
-
-  const _InfoRow({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.isStatus = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: AppColors.primary),
-          const SizedBox(width: 12),
-          Text(
-            label,
-            style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+      padding: const EdgeInsets.only(bottom: 12, left: 4),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          style: GoogleFonts.inter(
+            color: AppColors.textSecondary,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.8,
           ),
-          const Spacer(),
-          if (isStatus)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                value,
-                style: TextStyle(
-                  color: AppColors.success,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            )
-          else
-            Text(
-              value,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-                color: Color(0xFF1E293B),
-              ),
-            ),
-        ],
+        ),
       ),
     );
   }
-}
 
-class _ActionTile extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String label;
-  final VoidCallback onTap;
-
-  const _ActionTile({
-    required this.icon,
-    required this.color,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
+  Widget _buildTile(IconData icon, String title, String subtitle) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: AppColors.primary, size: 20),
         ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, color: color, size: 18),
-            ),
-            const SizedBox(width: 14),
-            Text(
-              label,
-              style: TextStyle(
+        title: Text(
+          title,
+          style: GoogleFonts.inter(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: GoogleFonts.inter(
+            color: AppColors.textSecondary,
+            fontSize: 12,
+          ),
+        ),
+        trailing: const Icon(
+          Icons.chevron_right_rounded,
+          color: AppColors.textLight,
+          size: 20,
+        ),
+        onTap: () {},
+      ),
+    );
+  }
+
+  void _confirmLogout(BuildContext context, AuthProvider auth) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppColors.border),
+        ),
+        title: Text(
+          'Log Out',
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w800,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        content: Text(
+          'Are you sure you want to log out of your account?',
+          style: GoogleFonts.inter(
+            color: AppColors.textSecondary,
+            fontSize: 14,
+          ),
+        ),
+        actionsPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Cancel',
+              style: GoogleFonts.inter(
+                color: AppColors.textLight,
                 fontWeight: FontWeight.w600,
-                fontSize: 14,
-                color: color,
               ),
             ),
-            const Spacer(),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: color.withValues(alpha: 0.5),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await auth.signOut();
+              if (context.mounted) {
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil(AppRoutes.login, (r) => false);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
-          ],
-        ),
+            child: Text(
+              'Yes, Log Out',
+              style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
       ),
     );
   }

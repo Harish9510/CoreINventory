@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../theme/app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../theme/app_colors.dart';
 
 // ─────────────────────────────────────────
 //  KPI card widget
@@ -23,20 +24,23 @@ class KpiCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.12),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+            color: color.withValues(alpha: 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
           ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8),
         ],
+        border: Border.all(color: color.withValues(alpha: 0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -44,59 +48,65 @@ class KpiCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: color, size: 22),
+                child: Icon(icon, color: color, size: 20),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                width: 8,
+                height: 8,
                 decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.trending_up, size: 12, color: AppColors.success),
-                    const SizedBox(width: 2),
-                    Text(
-                      'Live',
-                      style: TextStyle(
-                        color: AppColors.success,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  color: AppColors.success,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.success.withValues(alpha: 0.4),
+                      blurRadius: 6,
+                      spreadRadius: 1,
                     ),
                   ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: color,
+          const Spacer(),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              value,
+              style: GoogleFonts.inter(
+                fontSize: 30,
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
             ),
           ),
           const SizedBox(height: 4),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 13,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.inter(
+              fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF475569),
+              color: AppColors.textSecondary,
             ),
           ),
-          if (subtitle != null) ...[
-            const SizedBox(height: 2),
-            Text(
-              subtitle!,
-              style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+          if (subtitle != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                subtitle!,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: AppColors.textLight,
+                ),
+              ),
             ),
-          ],
         ],
       ),
     );
@@ -127,10 +137,10 @@ class _FilterChipRowState extends State<FilterChipRow> {
       children: [
         Text(
           widget.label,
-          style: const TextStyle(
+          style: GoogleFonts.inter(
             fontWeight: FontWeight.w600,
             fontSize: 12,
-            color: Color(0xFF64748B),
+            color: AppColors.textSecondary,
           ),
         ),
         const SizedBox(height: 8),
@@ -146,36 +156,36 @@ class _FilterChipRowState extends State<FilterChipRow> {
                   margin: const EdgeInsets.only(right: 8),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
-                    vertical: 7,
+                    vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: isSelected ? AppColors.primary : Colors.white,
-                    borderRadius: BorderRadius.circular(20),
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.background,
+                    borderRadius: BorderRadius.circular(22),
                     border: Border.all(
-                      color: isSelected
-                          ? AppColors.primary
-                          : const Color(0xFFE2E8F0),
+                      color: isSelected ? AppColors.primary : AppColors.border,
                     ),
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: AppColors.primary.withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
+                              color: AppColors.primary.withValues(alpha: 0.35),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
                             ),
                           ]
                         : [],
                   ),
                   child: Text(
                     option,
-                    style: TextStyle(
+                    style: GoogleFonts.inter(
                       color: isSelected
                           ? Colors.white
-                          : const Color(0xFF475569),
+                          : AppColors.textSecondary,
                       fontSize: 12,
                       fontWeight: isSelected
                           ? FontWeight.w600
-                          : FontWeight.normal,
+                          : FontWeight.w500,
                     ),
                   ),
                 ),
@@ -189,15 +199,12 @@ class _FilterChipRowState extends State<FilterChipRow> {
 }
 
 // ─────────────────────────────────────────
-//  Recent activity row
+//  Activity item row
 // ─────────────────────────────────────────
 class ActivityItem extends StatelessWidget {
   final IconData icon;
   final Color color;
-  final String title;
-  final String subtitle;
-  final String time;
-  final String status;
+  final String title, subtitle, time, status;
 
   const ActivityItem({
     super.key,
@@ -215,30 +222,32 @@ class ActivityItem extends StatelessWidget {
         return AppColors.success;
       case 'waiting':
         return AppColors.warning;
-      case 'draft':
-        return const Color(0xFF94A3B8);
       case 'ready':
-        return AppColors.accent;
+        return AppColors.info;
+      case 'draft':
+        return AppColors.textSecondary;
+      case 'canceled':
+        return AppColors.error;
       default:
-        return const Color(0xFF94A3B8);
+        return AppColors.textLight;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
+        border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
       child: Row(
         children: [
           Container(
-            width: 38,
-            height: 38,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, size: 18, color: color),
           ),
@@ -249,15 +258,17 @@ class ActivityItem extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: GoogleFonts.inter(
                     fontWeight: FontWeight.w600,
                     fontSize: 13,
+                    color: AppColors.textPrimary,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(
-                    color: Color(0xFF94A3B8),
+                  style: GoogleFonts.inter(
+                    color: AppColors.textSecondary,
                     fontSize: 11,
                   ),
                 ),
@@ -270,22 +281,25 @@ class ActivityItem extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: _statusColor.withValues(alpha: 0.12),
+                  color: _statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   status,
-                  style: TextStyle(
+                  style: GoogleFonts.inter(
                     color: _statusColor,
                     fontSize: 10,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 time,
-                style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 10),
+                style: GoogleFonts.inter(
+                  color: AppColors.textLight,
+                  fontSize: 10,
+                ),
               ),
             ],
           ),
