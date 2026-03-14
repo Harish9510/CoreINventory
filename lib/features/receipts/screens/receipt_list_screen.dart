@@ -1,54 +1,67 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../../models.dart';
-import '../../../main.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../theme/app_colors.dart';
 import 'new_receipt_screen.dart';
 
-class ReceiptListScreen extends StatefulWidget {
+class ReceiptListScreen extends StatelessWidget {
   const ReceiptListScreen({super.key});
 
   @override
-  State<ReceiptListScreen> createState() => _ReceiptListScreenState();
-}
-
-class _ReceiptListScreenState extends State<ReceiptListScreen> {
-  @override
-  void initState() {
-    super.initState();
-    inventoryStore.addListener(_refresh);
-  }
-
-  @override
-  void dispose() {
-    inventoryStore.removeListener(_refresh);
-    super.dispose();
-  }
-
-  void _refresh() => setState(() {});
-
-  @override
   Widget build(BuildContext context) {
-    final receipts = inventoryStore.getOperationsByType(OperationType.receipt);
-
     return Scaffold(
-      appBar: AppBar(title: const Text('Receipts')),
-      body: receipts.isEmpty
-          ? _emptyState()
-          : ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: receipts.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
-              itemBuilder: (_, i) => _opCard(receipts[i]),
-            ),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: Text(
+          'Receipts',
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w800,
+            fontSize: 24,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: AppColors.border, height: 1),
+        ),
+      ),
+      body: Consumer<InventoryStore>(
+        builder: (context, store, _) {
+          final receipts = store.getOperationsByType(OperationType.receipt);
+          return receipts.isEmpty
+              ? _emptyState()
+              : ListView.separated(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 24,
+                  ),
+                  itemCount: receipts.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (_, i) => _opCard(context, store, receipts[i]),
+                );
+        },
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const NewReceiptScreen()),
         ),
-        icon: const Icon(Iconsax.add),
-        label: const Text('New Receipt'),
+        backgroundColor: AppColors.success,
+        elevation: 4,
+        icon: const Icon(Iconsax.add, color: Colors.white),
+        label: Text(
+          'New Receipt',
+          style: GoogleFonts.inter(
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );
   }
@@ -59,7 +72,7 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: AppColors.successLight,
               shape: BoxShape.circle,
@@ -70,30 +83,53 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
               color: AppColors.success,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           Text(
             'No receipts yet',
-            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Keep track of incoming stock items',
+            style: GoogleFonts.inter(
+              color: AppColors.textSecondary,
+              fontSize: 14,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _opCard(StockOperation op) {
+  Widget _opCard(
+    BuildContext context,
+    InventoryStore store,
+    StockOperation op,
+  ) {
     final productNames = op.products.entries
         .map((e) {
-          final p = inventoryStore.getProduct(e.key);
+          final p = store.getProduct(e.key);
           return '${p?.name ?? e.key} × ${e.value}';
         })
         .join(', ');
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha((255 * 0.1).round()),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,26 +137,51 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                op.reference,
-                style: GoogleFonts.inter(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Text(
+                  op.reference,
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
               _statusBadge(op.status),
             ],
           ),
+          const SizedBox(height: 18),
+          _infoRow(Iconsax.user, op.partner ?? 'Unknown Partner'),
           const SizedBox(height: 10),
-          _infoRow(Iconsax.user, op.partner ?? 'Unknown'),
-          const SizedBox(height: 6),
-          _infoRow(Iconsax.building, '→ ${op.destinationLocation ?? "N/A"}'),
-          const SizedBox(height: 6),
-          _infoRow(Iconsax.box, productNames),
-          const SizedBox(height: 6),
           _infoRow(
-            Iconsax.calendar,
-            '${op.scheduledDate.day}/${op.scheduledDate.month}/${op.scheduledDate.year}',
+            Iconsax.location_add,
+            '${op.destinationLocation ?? "Main Warehouse"}',
+          ),
+          const SizedBox(height: 10),
+          _infoRow(Iconsax.box, productNames),
+          const Divider(height: 32, color: AppColors.border),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _infoRow(
+                Iconsax.calendar,
+                '${op.scheduledDate.day}/${op.scheduledDate.month}/${op.scheduledDate.year}',
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: AppColors.textLight,
+                size: 20,
+              ),
+            ],
           ),
         ],
       ),
@@ -130,13 +191,16 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
   Widget _infoRow(IconData icon, String text) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: AppColors.textSecondary),
-        const SizedBox(width: 8),
+        Icon(icon, size: 16, color: AppColors.primary),
+        const SizedBox(width: 10),
         Expanded(
           child: Text(
             text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: GoogleFonts.inter(
               fontSize: 13,
+              fontWeight: FontWeight.w500,
               color: AppColors.textSecondary,
             ),
           ),
@@ -149,18 +213,23 @@ class _ReceiptListScreenState extends State<ReceiptListScreen> {
     final color = status == OperationStatus.done
         ? AppColors.success
         : AppColors.warning;
+    final bgColor = status == OperationStatus.done
+        ? AppColors.successLight
+        : AppColors.warningLight;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(6),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
         status.name.toUpperCase(),
         style: GoogleFonts.inter(
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
+          fontSize: 9,
+          fontWeight: FontWeight.w800,
           color: color,
+          letterSpacing: 0.5,
         ),
       ),
     );

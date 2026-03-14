@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../../models.dart';
 import '../../../main.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../theme/app_colors.dart';
 
 class NewDeliveryScreen extends StatefulWidget {
   const NewDeliveryScreen({super.key});
@@ -266,7 +267,7 @@ class _NewDeliveryScreenState extends State<NewDeliveryScreen> {
       itemsMap[item['id'] as String] =
           (itemsMap[item['id'] as String] ?? 0) + (item['qty'] as int);
     }
-    inventoryStore.createDelivery(
+    context.read<InventoryStore>().createDelivery(
       customer: _customerCtrl.text,
       source: _source,
       items: itemsMap,

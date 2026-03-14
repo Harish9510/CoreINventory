@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:iconsax/iconsax.dart';
+import 'package:provider/provider.dart';
 import '../../theme/app_colors.dart';
-import '../../widgets/dashboard_widgets.dart';
+import '../../models.dart';
+import '../../features/products/screens/product_list_screen.dart';
+import '../../features/receipts/screens/receipt_list_screen.dart';
+import '../../features/deliveries/screens/delivery_list_screen.dart';
+import '../../features/transfers/screens/transfer_list_screen.dart';
+import '../../features/adjustments/screens/adjustment_list_screen.dart';
+import '../../features/ledger/screens/stock_ledger_screen.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -11,335 +19,206 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  final List<_KpiData> _kpis = [
-    _KpiData(
-      'Total In Stock',
-      '1,284',
-      Icons.inventory_2_rounded,
-      AppColors.primary,
-      '+12 today',
-    ),
-    _KpiData(
-      'Low / Out of Stock',
-      '23',
-      Icons.warning_amber_rounded,
-      AppColors.warning,
-      '5 critical',
-    ),
-    _KpiData(
-      'Pending Receipts',
-      '12',
-      Icons.download_rounded,
-      AppColors.info,
-      'Awaiting',
-    ),
-    _KpiData(
-      'Pending Deliveries',
-      '9',
-      Icons.local_shipping_rounded,
-      AppColors.success,
-      'Ready',
-    ),
-    _KpiData(
-      'Transfers Today',
-      '5',
-      Icons.swap_horiz_rounded,
-      AppColors.error,
-      'Scheduled',
-    ),
-  ];
-
-  final List<_ActivityData> _activities = [
-    _ActivityData(
-      Icons.download_rounded,
-      AppColors.info,
-      'REC-00142',
-      '50 kg Steel Rods · Main Warehouse',
-      '2h ago',
-      'Done',
-    ),
-    _ActivityData(
-      Icons.local_shipping_rounded,
-      AppColors.success,
-      'DEL-00088',
-      '10 Chairs · Customer #392',
-      '3h ago',
-      'Ready',
-    ),
-    _ActivityData(
-      Icons.swap_horiz_rounded,
-      AppColors.primary,
-      'INT-00031',
-      'Main Store → Production Rack',
-      '5h ago',
-      'Waiting',
-    ),
-    _ActivityData(
-      Icons.tune_rounded,
-      AppColors.warning,
-      'ADJ-00019',
-      '3 kg Steel damaged & adjusted',
-      '1d ago',
-      'Done',
-    ),
-    _ActivityData(
-      Icons.download_rounded,
-      AppColors.info,
-      'REC-00141',
-      '100 units PVC Pipe · Store B',
-      '1d ago',
-      'Draft',
-    ),
-    _ActivityData(
-      Icons.local_shipping_rounded,
-      AppColors.success,
-      'DEL-00087',
-      '25 Steel Frames · Customer #280',
-      '2d ago',
-      'Done',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
+    final store = context.watch<InventoryStore>();
+
+    // Calculated stats
+    final totalProducts = store.products.length;
+    final totalStock = store.products.fold(0, (sum, p) => sum + p.totalStock);
+    final lowStockCount = store.products
+        .where((p) => p.totalStock > 0 && p.totalStock <= p.reorderPoint)
+        .length;
+    final outOfStockCount = store.products
+        .where((p) => p.totalStock == 0)
+        .length;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          // ── Header (Light themed with Primary Gradient accents)
+          // ── Header ──
           SliverToBoxAdapter(
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(28, 52, 28, 28),
-              decoration: const BoxDecoration(
-                color: AppColors.surface,
-                border: Border(bottom: BorderSide(color: AppColors.border)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _greeting(),
-                              style: GoogleFonts.inter(
-                                color: AppColors.textSecondary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Inventory Dashboard',
-                              style: GoogleFonts.inter(
-                                color: AppColors.textPrimary,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ],
+                      Text(
+                        'Easy Inventory',
+                        style: GoogleFonts.inter(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.textPrimary,
+                          letterSpacing: -1,
                         ),
                       ),
-                      _HeaderChip(
-                        icon: Icons.notifications_outlined,
-                        color: AppColors.primary,
-                        label: '3',
-                      ),
-                      const SizedBox(width: 10),
-                      _HeaderChip(
-                        icon: Icons.refresh_rounded,
-                        color: AppColors.textSecondary,
-                        label: null,
+                      Text(
+                        'Operations Dashboard',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  // Summary bar
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: Row(
-                      children: [
-                        _SummaryChip(
-                          label: 'Warehouses',
-                          value: '3',
-                          color: AppColors.primary,
-                        ),
-                        _vDivider(),
-                        _SummaryChip(
-                          label: 'Products',
-                          value: '286',
-                          color: AppColors.success,
-                        ),
-                        _vDivider(),
-                        _SummaryChip(
-                          label: 'SKUs',
-                          value: '1,284',
-                          color: AppColors.warning,
-                        ),
-                        _vDivider(),
-                        _SummaryChip(
-                          label: 'Alerts',
-                          value: '23',
-                          color: AppColors.error,
+                      color: const Color(0xFF818CF8),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF818CF8).withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
+                    child: const Icon(
+                      Iconsax.box,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                   ),
                 ],
               ),
             ),
           ),
 
-          // ── KPI Cards
+          // ── KPI Cards Grid ──
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-            sliver: SliverGrid(
-              delegate: SliverChildBuilderDelegate(
-                (context, i) => KpiCard(
-                  title: _kpis[i].title,
-                  value: _kpis[i].value,
-                  icon: _kpis[i].icon,
-                  color: _kpis[i].color,
-                  subtitle: _kpis[i].subtitle,
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            sliver: SliverGrid.count(
+              crossAxisCount: 2,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              childAspectRatio: 1.25,
+              children: [
+                _buildKpiCard(
+                  'Total Products',
+                  totalProducts.toString(),
+                  Iconsax.box,
+                  const Color(0xFF818CF8),
                 ),
-                childCount: _kpis.length,
-              ),
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 240,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 0.85,
-              ),
+                _buildKpiCard(
+                  'Total Stock',
+                  totalStock.toString(),
+                  Iconsax.grid_5,
+                  const Color(0xFF10B981),
+                ),
+                _buildKpiCard(
+                  'Low Stock',
+                  lowStockCount.toString(),
+                  Iconsax.info_circle,
+                  const Color(0xFFF59E0B),
+                ),
+                _buildKpiCard(
+                  'Out of Stock',
+                  outOfStockCount.toString(),
+                  Iconsax.danger,
+                  const Color(0xFFEF4444),
+                ),
+              ],
             ),
           ),
 
-          // ── Filters
-          SliverToBoxAdapter(
-            child: Container(
-              margin: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.border),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.02),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.primarySurface,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.tune_rounded,
-                          color: AppColors.primary,
-                          size: 18,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Quick Filters',
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  const FilterChipRow(
-                    label: 'Document Type',
-                    options: [
-                      'Receipts',
-                      'Delivery',
-                      'Internal Transfers',
-                      'Adjustments',
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  const FilterChipRow(
-                    label: 'Status',
-                    options: ['Draft', 'Waiting', 'Ready', 'Done', 'Canceled'],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _DropdownFilter(
-                          label: 'Warehouse',
-                          icon: Icons.warehouse_rounded,
-                          options: [
-                            'All Warehouses',
-                            'Main Warehouse',
-                            'Store B',
-                            'Production Floor',
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: _DropdownFilter(
-                          label: 'Category',
-                          icon: Icons.category_rounded,
-                          options: [
-                            'All Categories',
-                            'Raw Materials',
-                            'Finished Goods',
-                            'Packaging',
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // ── Recent Operations
+          // ── Quick Actions ──
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 28, 20, 10),
+              padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
+              child: Text(
+                'Quick Actions',
+                style: GoogleFonts.inter(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+          ),
+
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            sliver: SliverGrid.count(
+              crossAxisCount: 3,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 0.9,
+              children: [
+                _buildActionTile(
+                  context,
+                  'Products',
+                  Iconsax.box,
+                  const Color(0xFF6366F1),
+                  const ProductListScreen(),
+                ),
+                _buildActionTile(
+                  context,
+                  'Receipts',
+                  Iconsax.document_download,
+                  const Color(0xFF10B981),
+                  const ReceiptListScreen(),
+                ),
+                _buildActionTile(
+                  context,
+                  'Deliveries',
+                  Iconsax.truck_fast,
+                  const Color(0xFFF59E0B),
+                  const DeliveryListScreen(),
+                ),
+                _buildActionTile(
+                  context,
+                  'Transfers',
+                  Iconsax.arrow_swap_horizontal,
+                  const Color(0xFF8B5CF6),
+                  const TransferListScreen(),
+                ),
+                _buildActionTile(
+                  context,
+                  'Adjustments',
+                  Iconsax.edit_2,
+                  const Color(0xFFEF4444),
+                  const AdjustmentListScreen(),
+                ),
+                _buildActionTile(
+                  context,
+                  'Ledger',
+                  Iconsax.document_text,
+                  const Color(0xFF3B82F6),
+                  const StockLedgerScreen(),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Recent Activity ──
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 32, 24, 12),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Recent Operations',
+                    'Recent Activity',
                     style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 17,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  TextButton.icon(
+                  TextButton(
                     onPressed: () {},
-                    icon: const Icon(Icons.open_in_new_rounded, size: 14),
-                    label: Text(
-                      'View all',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.w600),
-                    ),
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.primary,
+                    child: Text(
+                      'View All',
+                      style: GoogleFonts.inter(
+                        color: const Color(0xFF818CF8),
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
@@ -347,34 +226,14 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ),
 
-          SliverToBoxAdapter(
-            child: Container(
-              margin: const EdgeInsets.fromLTRB(20, 0, 20, 32),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: AppColors.border),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.02),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: _activities
-                    .map(
-                      (a) => ActivityItem(
-                        icon: a.icon,
-                        color: a.color,
-                        title: a.title,
-                        subtitle: a.subtitle,
-                        time: a.time,
-                        status: a.status,
-                      ),
-                    )
-                    .toList(),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => _buildActivityItem(store.operations[index]),
+                childCount: store.operations.length > 5
+                    ? 5
+                    : store.operations.length,
               ),
             ),
           ),
@@ -383,200 +242,185 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  String _greeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good morning 👋';
-    if (hour < 17) return 'Good afternoon 👋';
-    return 'Good evening 👋';
-  }
-
-  Widget _vDivider() => Container(
-    width: 1,
-    height: 28,
-    margin: const EdgeInsets.symmetric(horizontal: 12),
-    color: AppColors.border,
-  );
-}
-
-class _HeaderChip extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String? label;
-
-  const _HeaderChip({required this.icon, required this.color, this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final isPrimary = color == AppColors.primary;
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: isPrimary ? AppColors.primarySurface : AppColors.background,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isPrimary
-                  ? AppColors.primaryLight.withValues(alpha: 0.3)
-                  : AppColors.border,
-            ),
+  Widget _buildKpiCard(String label, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
-          child: Icon(icon, color: color, size: 20),
-        ),
-        if (label != null)
-          Positioned(
-            right: -4,
-            top: -4,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-              decoration: BoxDecoration(
-                color: AppColors.error,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                label!,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Icon(icon, color: Colors.white.withValues(alpha: 0.9), size: 24),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
                 style: GoogleFonts.inter(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
                   color: Colors.white,
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
+              Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white.withValues(alpha: 0.8),
+                ),
+              ),
+            ],
           ),
-      ],
+        ],
+      ),
     );
   }
-}
 
-class _SummaryChip extends StatelessWidget {
-  final String label, value;
-  final Color color;
+  Widget _buildActionTile(
+    BuildContext context,
+    String label,
+    IconData icon,
+    Color color,
+    Widget screen,
+  ) {
+    return GestureDetector(
+      onTap: () =>
+          Navigator.push(context, MaterialPageRoute(builder: (_) => screen)),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-  const _SummaryChip({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
+  Widget _buildActivityItem(StockOperation op) {
+    IconData icon;
+    Color color;
+    switch (op.type) {
+      case OperationType.receipt:
+        icon = Iconsax.document_download;
+        color = const Color(0xFF10B981);
+        break;
+      case OperationType.delivery:
+        icon = Iconsax.truck_fast;
+        color = const Color(0xFFF59E0B);
+        break;
+      case OperationType.transfer:
+        icon = Iconsax.arrow_swap_horizontal;
+        color = const Color(0xFF8B5CF6);
+        break;
+      case OperationType.adjustment:
+        icon = Iconsax.edit_2;
+        color = const Color(0xFFEF4444);
+        break;
+    }
 
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
+    final bool isDone = op.status == OperationStatus.done;
+    final statusColor = isDone ? AppColors.success : AppColors.warning;
+    final statusBg = isDone ? AppColors.successLight : AppColors.warningLight;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
         children: [
-          Text(
-            value,
-            style: GoogleFonts.inter(
-              color: color,
-              fontWeight: FontWeight.w800,
-              fontSize: 18,
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  op.reference,
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  op.partner ?? 'Internal Move',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(
-              color: AppColors.textSecondary,
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: statusBg.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              op.status.name,
+              style: GoogleFonts.inter(
+                color: statusColor,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
         ],
       ),
     );
   }
-}
-
-class _DropdownFilter extends StatefulWidget {
-  final String label;
-  final IconData icon;
-  final List<String> options;
-
-  const _DropdownFilter({
-    required this.label,
-    required this.icon,
-    required this.options,
-  });
-
-  @override
-  State<_DropdownFilter> createState() => _DropdownFilterState();
-}
-
-class _DropdownFilterState extends State<_DropdownFilter> {
-  late String _selected;
-
-  @override
-  void initState() {
-    super.initState();
-    _selected = widget.options[0];
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          widget.label,
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w600,
-            fontSize: 12,
-            color: AppColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: AppColors.background,
-            border: Border.all(color: AppColors.border),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _selected,
-              isExpanded: true,
-              style: GoogleFonts.inter(
-                color: AppColors.textPrimary,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-              icon: const Icon(
-                Icons.expand_more_rounded,
-                size: 18,
-                color: AppColors.textSecondary,
-              ),
-              onChanged: (v) => setState(() => _selected = v!),
-              items: widget.options
-                  .map((o) => DropdownMenuItem(value: o, child: Text(o)))
-                  .toList(),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _KpiData {
-  final String title, value, subtitle;
-  final IconData icon;
-  final Color color;
-  const _KpiData(this.title, this.value, this.icon, this.color, this.subtitle);
-}
-
-class _ActivityData {
-  final IconData icon;
-  final Color color;
-  final String title, subtitle, time, status;
-  const _ActivityData(
-    this.icon,
-    this.color,
-    this.title,
-    this.subtitle,
-    this.time,
-    this.status,
-  );
 }

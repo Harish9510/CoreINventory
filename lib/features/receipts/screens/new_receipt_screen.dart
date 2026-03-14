@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../models.dart';
+import 'package:provider/provider.dart';
 import '../../../main.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../models.dart';
+import '../../../theme/app_colors.dart';
 
 class NewReceiptScreen extends StatefulWidget {
   const NewReceiptScreen({super.key});
@@ -21,7 +22,16 @@ class _NewReceiptScreenState extends State<NewReceiptScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('New Receipt')),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: Text(
+          'New Receipt',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 18),
+        ),
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Form(
@@ -32,10 +42,16 @@ class _NewReceiptScreenState extends State<NewReceiptScreen> {
               _sectionTitle('Supplier'),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Iconsax.user),
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Iconsax.user),
+                  hintText: 'Select supplier',
+                  filled: true,
+                  fillColor: AppColors.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
                 ),
-                hint: const Text('Select supplier'),
                 items: inventoryStore.suppliers
                     .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                     .toList(),
@@ -46,24 +62,40 @@ class _NewReceiptScreenState extends State<NewReceiptScreen> {
               _sectionTitle('Destination'),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _destination,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Iconsax.building),
+                initialValue: _destination,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Iconsax.building),
+                  filled: true,
+                  fillColor: AppColors.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
                 ),
                 items: inventoryStore.warehouses
                     .map((w) => DropdownMenuItem(value: w, child: Text(w)))
                     .toList(),
                 onChanged: (v) => setState(() => _destination = v!),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _sectionTitle('Products'),
-                  OutlinedButton.icon(
+                  TextButton.icon(
                     onPressed: _showAddProductDialog,
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Add'),
+                    icon: const Icon(
+                      Icons.add_circle_outline_rounded,
+                      size: 20,
+                      color: AppColors.success,
+                    ),
+                    label: Text(
+                      'Add Item',
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.success,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -73,22 +105,23 @@ class _NewReceiptScreenState extends State<NewReceiptScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: AppColors.background,
+                    color: AppColors.surface,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: AppColors.border),
                   ),
                   child: Column(
                     children: [
-                      const Icon(
+                      Icon(
                         Iconsax.box_add,
                         size: 36,
-                        color: AppColors.textLight,
+                        color: AppColors.textLight.withValues(alpha: 0.5),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
                       Text(
-                        'No products added',
+                        'No items added to receipt',
                         style: GoogleFonts.inter(
-                          color: AppColors.textSecondary,
+                          color: AppColors.textLight,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -110,11 +143,20 @@ class _NewReceiptScreenState extends State<NewReceiptScreen> {
         ),
         child: ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 52),
+            backgroundColor: AppColors.success,
+            foregroundColor: Colors.white,
+            minimumSize: const Size(double.infinity, 54),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            elevation: 0,
           ),
           onPressed: _validate,
-          icon: const Icon(Iconsax.tick_circle),
-          label: const Text('Validate & Receive'),
+          icon: const Icon(Iconsax.tick_circle, color: Colors.white),
+          label: Text(
+            'Validate & Receive',
+            style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16),
+          ),
         ),
       ),
     );
@@ -122,16 +164,20 @@ class _NewReceiptScreenState extends State<NewReceiptScreen> {
 
   Widget _sectionTitle(String t) => Text(
     t,
-    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
+    style: GoogleFonts.inter(
+      fontSize: 15,
+      fontWeight: FontWeight.w700,
+      color: AppColors.textPrimary,
+    ),
   );
 
   Widget _productTile(int index, Map<String, dynamic> item) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
       child: Row(
@@ -140,7 +186,7 @@ class _NewReceiptScreenState extends State<NewReceiptScreen> {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: AppColors.successLight,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(Iconsax.box, color: AppColors.success, size: 20),
           ),
@@ -151,12 +197,17 @@ class _NewReceiptScreenState extends State<NewReceiptScreen> {
               children: [
                 Text(
                   item['name'],
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
                 Text(
-                  'Qty: ${item['qty']}',
+                  'Quantity: ${item['qty']}',
                   style: GoogleFonts.inter(
                     fontSize: 12,
+                    fontWeight: FontWeight.w500,
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -179,29 +230,49 @@ class _NewReceiptScreenState extends State<NewReceiptScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Padding(
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
         padding: EdgeInsets.fromLTRB(
-          20,
-          20,
-          20,
-          MediaQuery.of(ctx).viewInsets.bottom + 20,
+          24,
+          24,
+          24,
+          MediaQuery.of(ctx).viewInsets.bottom + 24,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Add Product',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
+            Text(
+              'Add Product to Receipt',
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 24),
             DropdownButtonFormField<String>(
-              decoration: const InputDecoration(labelText: 'Product'),
+              decoration: InputDecoration(
+                labelText: 'Select Product',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               items: inventoryStore.products
                   .map(
                     (p) => DropdownMenuItem(value: p.id, child: Text(p.name)),
@@ -209,16 +280,27 @@ class _NewReceiptScreenState extends State<NewReceiptScreen> {
                   .toList(),
               onChanged: (v) => selectedProductId = v,
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             TextField(
               controller: qtyCtrl,
-              decoration: const InputDecoration(labelText: 'Quantity'),
+              decoration: InputDecoration(
+                labelText: 'Quantity',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               keyboardType: TextInputType.number,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 48),
+                minimumSize: const Size(double.infinity, 54),
+                backgroundColor: AppColors.success,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                elevation: 0,
               ),
               onPressed: () {
                 if (selectedProductId != null) {
@@ -233,7 +315,10 @@ class _NewReceiptScreenState extends State<NewReceiptScreen> {
                   Navigator.pop(ctx);
                 }
               },
-              child: const Text('Add'),
+              child: Text(
+                'Add to Receipt',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+              ),
             ),
           ],
         ),
@@ -246,11 +331,14 @@ class _NewReceiptScreenState extends State<NewReceiptScreen> {
     if (_items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Add at least one product'),
+          content: Text(
+            'Please add at least one product',
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          ),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
       );
@@ -263,7 +351,7 @@ class _NewReceiptScreenState extends State<NewReceiptScreen> {
           (itemsMap[item['id'] as String] ?? 0) + (item['qty'] as int);
     }
 
-    inventoryStore.createReceipt(
+    context.read<InventoryStore>().createReceipt(
       supplier: _supplier!,
       destination: _destination,
       items: itemsMap,
@@ -271,10 +359,14 @@ class _NewReceiptScreenState extends State<NewReceiptScreen> {
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Receipt created! Stock updated ✓'),
+        content: Text(
+          'Receipt confirmed! Stock received ✓',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        ),
         backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 3),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

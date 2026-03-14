@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../models.dart';
 import '../../../main.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../theme/app_colors.dart';
 
 class NewTransferScreen extends StatefulWidget {
   const NewTransferScreen({super.key});
@@ -21,7 +20,16 @@ class _NewTransferScreenState extends State<NewTransferScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('New Transfer')),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        title: Text(
+          'New Transfer',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 18),
+        ),
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Form(
@@ -32,9 +40,15 @@ class _NewTransferScreenState extends State<NewTransferScreen> {
               _sectionTitle('Source'),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _source,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Iconsax.export_1),
+                initialValue: _source,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Iconsax.export_1),
+                  filled: true,
+                  fillColor: AppColors.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
                 ),
                 items: inventoryStore.warehouses
                     .map((w) => DropdownMenuItem(value: w, child: Text(w)))
@@ -53,9 +67,15 @@ class _NewTransferScreenState extends State<NewTransferScreen> {
               _sectionTitle('Destination'),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _destination,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Iconsax.import_1),
+                initialValue: _destination,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Iconsax.import_1),
+                  filled: true,
+                  fillColor: AppColors.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
                 ),
                 items: inventoryStore.warehouses
                     .map((w) => DropdownMenuItem(value: w, child: Text(w)))
@@ -64,15 +84,25 @@ class _NewTransferScreenState extends State<NewTransferScreen> {
                 validator: (v) =>
                     v == _source ? 'Must differ from source' : null,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _sectionTitle('Products'),
-                  OutlinedButton.icon(
+                  TextButton.icon(
                     onPressed: _showAddDialog,
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Add'),
+                    icon: const Icon(
+                      Icons.add_circle_outline_rounded,
+                      size: 20,
+                      color: AppColors.primary,
+                    ),
+                    label: Text(
+                      'Add Item',
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -82,22 +112,26 @@ class _NewTransferScreenState extends State<NewTransferScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: AppColors.background,
+                    color: AppColors.surface,
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AppColors.border),
+                    border: Border.all(
+                      color: AppColors.border,
+                      style: BorderStyle.solid,
+                    ),
                   ),
                   child: Column(
                     children: [
-                      const Icon(
+                      Icon(
                         Iconsax.box_add,
                         size: 36,
-                        color: AppColors.textLight,
+                        color: AppColors.textLight.withValues(alpha: 0.5),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
                       Text(
-                        'No products added',
+                        'No products added yet',
                         style: GoogleFonts.inter(
-                          color: AppColors.textSecondary,
+                          color: AppColors.textLight,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -119,11 +153,20 @@ class _NewTransferScreenState extends State<NewTransferScreen> {
         ),
         child: ElevatedButton.icon(
           style: ElevatedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 52),
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            minimumSize: const Size(double.infinity, 54),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            elevation: 0,
           ),
           onPressed: _validate,
-          icon: const Icon(Iconsax.arrow_swap_horizontal),
-          label: const Text('Confirm Transfer'),
+          icon: const Icon(Iconsax.arrow_swap_horizontal, color: Colors.white),
+          label: Text(
+            'Confirm Transfer',
+            style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16),
+          ),
         ),
       ),
     );
@@ -131,16 +174,20 @@ class _NewTransferScreenState extends State<NewTransferScreen> {
 
   Widget _sectionTitle(String t) => Text(
     t,
-    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700),
+    style: GoogleFonts.inter(
+      fontSize: 15,
+      fontWeight: FontWeight.w700,
+      color: AppColors.textPrimary,
+    ),
   );
 
   Widget _productTile(int index, Map<String, dynamic> item) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
       ),
       child: Row(
@@ -148,10 +195,10 @@ class _NewTransferScreenState extends State<NewTransferScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFFF3E8FF),
-              borderRadius: BorderRadius.circular(10),
+              color: AppColors.primarySurface,
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Iconsax.box, color: Color(0xFF8B5CF6), size: 20),
+            child: const Icon(Iconsax.box, color: AppColors.primary, size: 20),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -160,12 +207,17 @@ class _NewTransferScreenState extends State<NewTransferScreen> {
               children: [
                 Text(
                   item['name'],
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
                 Text(
-                  'Qty: ${item['qty']}',
+                  'Quantity: ${item['qty']}',
                   style: GoogleFonts.inter(
                     fontSize: 12,
+                    fontWeight: FontWeight.w500,
                     color: AppColors.textSecondary,
                   ),
                 ),
@@ -187,29 +239,49 @@ class _NewTransferScreenState extends State<NewTransferScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Padding(
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
         padding: EdgeInsets.fromLTRB(
-          20,
-          20,
-          20,
-          MediaQuery.of(ctx).viewInsets.bottom + 20,
+          24,
+          24,
+          24,
+          MediaQuery.of(ctx).viewInsets.bottom + 24,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Add Product',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
+            Text(
+              'Add Product to Transfer',
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 24),
             DropdownButtonFormField<String>(
-              decoration: const InputDecoration(labelText: 'Product'),
+              decoration: InputDecoration(
+                labelText: 'Select Product',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               items: inventoryStore.products
                   .map(
                     (p) => DropdownMenuItem(value: p.id, child: Text(p.name)),
@@ -217,16 +289,27 @@ class _NewTransferScreenState extends State<NewTransferScreen> {
                   .toList(),
               onChanged: (v) => selectedId = v,
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
             TextField(
               controller: qtyCtrl,
-              decoration: const InputDecoration(labelText: 'Quantity'),
+              decoration: InputDecoration(
+                labelText: 'Quantity',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
               keyboardType: TextInputType.number,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 48),
+                minimumSize: const Size(double.infinity, 54),
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                elevation: 0,
               ),
               onPressed: () {
                 if (selectedId != null) {
@@ -241,7 +324,10 @@ class _NewTransferScreenState extends State<NewTransferScreen> {
                   Navigator.pop(ctx);
                 }
               },
-              child: const Text('Add'),
+              child: Text(
+                'Add to List',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+              ),
             ),
           ],
         ),
@@ -254,11 +340,14 @@ class _NewTransferScreenState extends State<NewTransferScreen> {
     if (_items.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Add products'),
+          content: Text(
+            'Please add at least one product',
+            style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+          ),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
       );
@@ -277,10 +366,14 @@ class _NewTransferScreenState extends State<NewTransferScreen> {
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Transfer completed! Stock moved ✓'),
+        content: Text(
+          'Transfer completed successfully!',
+          style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        ),
         backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 3),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }

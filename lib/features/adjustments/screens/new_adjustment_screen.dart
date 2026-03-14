@@ -3,7 +3,7 @@ import 'package:iconsax/iconsax.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../models.dart';
 import '../../../main.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../theme/app_colors.dart';
 
 class NewAdjustmentScreen extends StatefulWidget {
   const NewAdjustmentScreen({super.key});
