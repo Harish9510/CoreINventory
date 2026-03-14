@@ -65,7 +65,7 @@ class _LoginPageState extends State<LoginPage> {
           AppRoutes.organizationManagement,
         );
       } else {
-        Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+        Navigator.pushReplacementNamed(context, AppRoutes.shell);
       }
     } else {
       final errorMessage = authProvider.errorMessage ?? 'Login failed';
